@@ -1,0 +1,9 @@
+#pragma once
+
+#include <string_view>
+
+namespace sshmcp {
+
+inline constexpr auto VERSION = std::string_view{"@PROJECT_VERSION@"};
+
+}  // namespace sshmcp
