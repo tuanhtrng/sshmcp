@@ -28,6 +28,9 @@ add_executable(sshmcp_unit
     regress/unit/test_jsonrpc.cpp
     regress/unit/test_tools.cpp
     regress/unit/test_registry.cpp
-    regress/unit/test_mcp.cpp)
+    regress/unit/test_mcp.cpp
+    regress/unit/platform/${SSHMCP_PLATFORM}/test_impl.cpp)
+target_include_directories(sshmcp_unit PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/unit)
 target_link_libraries(sshmcp_unit PRIVATE sshmcp)
 add_test(NAME unit COMMAND sshmcp_unit)
