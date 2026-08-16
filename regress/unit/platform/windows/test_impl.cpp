@@ -51,10 +51,10 @@ namespace t = sshmcp::test;
 [[maybe_unused]] auto const t4 = t::add_test("spawn timeout", [] {
     auto impl =
         sshmcp::platform_impl_t{sshmcp::log_level_t::OFF};
-    auto const result = impl.run(
-        {.argv = {"cmd", "/c", "ping -n 30 127.0.0.1 >nul"},
-         .stdin_data = {},
-         .timeout_ms = 500});
+    auto const result =
+        impl.run({.argv = {"ping", "-n", "30", "127.0.0.1"},
+                  .stdin_data = {},
+                  .timeout_ms = 500});
     t::expect(result.has_value(), "spawn ok");
     t::expect(result->is_timed_out, "timed out");
 });
