@@ -236,4 +236,27 @@ auto context_with(sshmcp::spawn_result_t reply,
     t::expect(bad.text.contains("base64"), "clear error");
 });
 
+[[maybe_unused]] auto const t11 = t::add_test("exec gated", [] {
+    auto captured = sshmcp::spawn_request_t{};
+    auto context = context_with({.exit_code = 0}, captured);
+    context.config.allow = {"echo"};
+    auto session_called = false;
+    context.session_exec = [&](std::string_view, std::string_view, std::int64_t)
+        -> std::expected<sshmcp::session_result_t, sshmcp::error_t> {
+        session_called = true;
+        return sshmcp::session_result_t{};
+    };
+    auto const denied =
+        sshmcp::exec_tool_t::invoke(context, {{"command", "ls"}});
+    t::expect(denied.is_error, "one-shot gated");
+    t::expect(denied.text.contains("allowlist"), "message");
+    auto const denied_session = sshmcp::exec_tool_t::invoke(
+        context, {{"command", "ls"}, {"session", "s"}});
+    t::expect(denied_session.is_error, "session gated");
+    t::expect(!session_called, "session backend untouched");
+    auto const ok =
+        sshmcp::exec_tool_t::invoke(context, {{"command", "echo hi"}});
+    t::expect(!ok.is_error, "allowed passes");
+});
+
 } // namespace
