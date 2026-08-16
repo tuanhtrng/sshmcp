@@ -32,8 +32,8 @@ struct spawn_result_t {
     bool is_timed_out{};
 };
 
-using spawn_fn_t = std::function<std::expected<
-    spawn_result_t, error_t>(spawn_request_t const&)>;
+using spawn_fn_t = std::function<std::expected<spawn_result_t, error_t>(
+    spawn_request_t const&)>;
 
 struct config_t {
     std::string target;
@@ -52,4 +52,4 @@ struct tool_result_t {
     bool is_error{};
 };
 
-}  // namespace sshmcp
+} // namespace sshmcp

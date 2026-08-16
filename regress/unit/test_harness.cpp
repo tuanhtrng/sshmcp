@@ -10,4 +10,4 @@ namespace t = sshmcp::test;
         t::expect(!t::state().cases.empty(), "case registered");
     });
 
-}  // namespace
+} // namespace

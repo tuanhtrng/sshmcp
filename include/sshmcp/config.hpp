@@ -13,8 +13,7 @@ namespace sshmcp {
 
 using get_env_fn_t = std::function<char const*(char const*)>;
 
-inline auto parse_log_level(std::string_view text)
-    -> log_level_t {
+inline auto parse_log_level(std::string_view text) -> log_level_t {
     if (text == "off") {
         return log_level_t::OFF;
     }
@@ -34,16 +33,15 @@ inline auto load_config(get_env_fn_t const& get_env,
     } else if (!args.empty()) {
         config.target = args[0];
     } else {
-        return std::unexpected{error_t{
-            "no target: set SSHMCP_TARGET or pass user@host "
-            "as the first argument"}};
+        return std::unexpected{
+            error_t{"no target: set SSHMCP_TARGET or pass user@host "
+                    "as the first argument"}};
     }
     auto const* ssh_exe = get_env("SSHMCP_SSH_EXE");
     if (ssh_exe != nullptr && *ssh_exe != '\0') {
         config.ssh_exe = split_command(ssh_exe);
         if (config.ssh_exe.empty()) {
-            return std::unexpected{
-                error_t{"SSHMCP_SSH_EXE is blank"}};
+            return std::unexpected{error_t{"SSHMCP_SSH_EXE is blank"}};
         }
     }
     auto const* ssh_args = get_env("SSHMCP_SSH_ARGS");
@@ -57,4 +55,4 @@ inline auto load_config(get_env_fn_t const& get_env,
     return config;
 }
 
-}  // namespace sshmcp
+} // namespace sshmcp

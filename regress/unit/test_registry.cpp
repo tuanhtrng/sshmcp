@@ -15,9 +15,9 @@ static_assert(sshmcp::tool<sshmcp::exec_tool_t>);
 static_assert(sshmcp::tool<sshmcp::read_file_tool_t>);
 static_assert(sshmcp::tool<sshmcp::write_file_tool_t>);
 
-using tools_t = sshmcp::tool_set_t<sshmcp::exec_tool_t,
-                                   sshmcp::read_file_tool_t,
-                                   sshmcp::write_file_tool_t>;
+using tools_t =
+    sshmcp::tool_set_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
+                       sshmcp::write_file_tool_t>;
 
 [[maybe_unused]] auto const t1 = t::add_test("list", [] {
     auto const tools = tools_t::list();
@@ -33,13 +33,11 @@ using tools_t = sshmcp::tool_set_t<sshmcp::exec_tool_t,
     auto context = sshmcp::context_t{
         .config = {},
         .spawn = [](sshmcp::spawn_request_t const&)
-            -> std::expected<sshmcp::spawn_result_t,
-                             sshmcp::error_t> {
-            return sshmcp::spawn_result_t{
-                .stdout_text = "ok\n", .exit_code = 0};
+            -> std::expected<sshmcp::spawn_result_t, sshmcp::error_t> {
+            return sshmcp::spawn_result_t{.stdout_text = "ok\n",
+                                          .exit_code = 0};
         }};
-    auto const known =
-        tools_t::call(context, "exec", {{"command", "true"}});
+    auto const known = tools_t::call(context, "exec", {{"command", "true"}});
     t::expect(known.has_value(), "known dispatches");
     t::expect(!known->is_error, "invoked");
 
@@ -47,4 +45,4 @@ using tools_t = sshmcp::tool_set_t<sshmcp::exec_tool_t,
     t::expect(!unknown.has_value(), "unknown is nullopt");
 });
 
-}  // namespace
+} // namespace

@@ -9,11 +9,10 @@
 
 namespace sshmcp {
 
-template<typename Derived>
+template <typename Derived>
 class subprocess_base_t {
-public:
-    explicit subprocess_base_t(log_level_t log_level)
-        : log_level{log_level} {}
+  public:
+    explicit subprocess_base_t(log_level_t log_level) : log_level{log_level} {}
 
     auto init_stdio() -> void {
         static_cast<Derived*>(this)->init_stdio_impl();
@@ -30,20 +29,16 @@ public:
             std::println(stderr, "sshmcp: spawn: {}", line);
         }
         auto const start = std::chrono::steady_clock::now();
-        auto result =
-            static_cast<Derived*>(this)->spawn_impl(request);
+        auto result = static_cast<Derived*>(this)->spawn_impl(request);
         auto const elapsed_ms =
-            std::chrono::duration_cast<
-                std::chrono::milliseconds>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - start)
                 .count();
         if (log_level != log_level_t::OFF) {
             if (result) {
-                std::println(stderr,
-                             "sshmcp: exit {} in {} ms{}",
+                std::println(stderr, "sshmcp: exit {} in {} ms{}",
                              result->exit_code, elapsed_ms,
-                             result->is_timed_out ? " (timeout)"
-                                                  : "");
+                             result->is_timed_out ? " (timeout)" : "");
             } else {
                 std::println(stderr, "sshmcp: spawn error: {}",
                              result.error().message);
@@ -52,8 +47,8 @@ public:
         return result;
     }
 
-private:
+  private:
     log_level_t log_level;
 };
 
-}  // namespace sshmcp
+} // namespace sshmcp

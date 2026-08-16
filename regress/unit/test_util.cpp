@@ -13,17 +13,14 @@ namespace t = sshmcp::test;
     t::expect(small.text == "abc", "small unchanged");
     t::expect(!small.is_truncated, "small flag");
 
-    auto const big =
-        sshmcp::truncate_middle(std::string(100, 'x'), 10);
+    auto const big = sshmcp::truncate_middle(std::string(100, 'x'), 10);
     t::expect(big.is_truncated, "big flag");
     t::expect(big.text.starts_with("xxxxx"), "head kept");
     t::expect(big.text.ends_with("xxxxx"), "tail kept");
-    t::expect(big.text.contains("[sshmcp: 90 chars truncated]"),
-              "marker");
+    t::expect(big.text.contains("[sshmcp: 90 chars truncated]"), "marker");
 
-    auto const exact =
-        sshmcp::truncate_middle(std::string(10, 'y'), 10);
+    auto const exact = sshmcp::truncate_middle(std::string(10, 'y'), 10);
     t::expect(!exact.is_truncated, "exact fits");
 });
 
-}  // namespace
+} // namespace

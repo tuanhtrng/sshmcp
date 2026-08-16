@@ -10,9 +10,8 @@
 
 namespace sshmcp {
 
-class platform_impl_t
-    : public subprocess_base_t<platform_impl_t> {
-public:
+class platform_impl_t : public subprocess_base_t<platform_impl_t> {
+  public:
     using subprocess_base_t<platform_impl_t>::subprocess_base_t;
 
     auto init_stdio_impl() -> void {
@@ -25,4 +24,4 @@ public:
     }
 };
 
-}  // namespace sshmcp
+} // namespace sshmcp

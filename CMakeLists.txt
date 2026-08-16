@@ -47,3 +47,21 @@ add_test(NAME e2e_timeout COMMAND Python3::Interpreter
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
     $<TARGET_FILE:sshmcp_app>
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/timeout)
+
+add_test(NAME lint_header_only COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/header_only.py
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lint_banned COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/banned_tokens.py
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lint_include COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/include_hygiene.py
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lint_format COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/check_format.py
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lint_style COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/style.py
+    ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties(lint_format lint_style PROPERTIES
+    SKIP_RETURN_CODE 77)
