@@ -245,9 +245,12 @@ Each defines
   - `header_only.py` — no `.cpp` outside `app/` and `regress/`
     (test runners are executables)
   - `banned_tokens.py` — `system(`, `popen`, `std::regex`, raw
-    `new`/`delete`, `using namespace std` in headers, forbidden
-    enumerator names, and the no-macro rule (`#define`/`#if` count
-    zero outside vendored code)
+    `new`/`delete`, `throw`/`try`/`catch`, any `using namespace`
+    and any using-declaration (`using ns::name;`); only the alias
+    form `using name = type;` and namespace aliases
+    (`namespace t = a::b;`) are allowed; forbidden enumerator
+    names; and the no-macro rule (`#define`/`#if` count zero
+    outside vendored code)
   - `include_hygiene.py` — `#pragma once` present; include order
     (own, sshmcp, nlohmann, std)
   - `check_format.py` — clang-format `--dry-run --Werror`
@@ -281,14 +284,19 @@ Each defines
 
 ```
 app/main.cpp
-include/sshmcp/          jsonrpc.hpp  mcp.hpp  tools.hpp  ssh.hpp
-                         subprocess.hpp  version.hpp
+cmake/version.hpp.in     (configure_file input; generated header
+                          lands in <build>/generated/sshmcp/)
+include/sshmcp/          types.hpp  ssh.hpp  util.hpp  config.hpp
+                         jsonrpc.hpp  registry.hpp  tools.hpp
+                         mcp.hpp  subprocess_base.hpp
+                         subprocess.hpp
                          platform/{windows,linux,openbsd}/impl.hpp
                          platform/posix_common.hpp
 include/nlohmann/json.hpp  (vendored, MIT)
 share/linter/*.py
 regress/unit/  regress/e2e/
-docs/superpowers/specs/
+docs/superpowers/specs/  docs/superpowers/plans/
 CMakeLists.txt  CMakePresets.json  .clang-format  .editorconfig
-LICENSE  README.md  .github/workflows/ci.yml
+.clang-tidy  .gitattributes  LICENSE  README.md
+.github/workflows/ci.yml
 ```
