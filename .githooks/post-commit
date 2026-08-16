@@ -1,4 +1,4 @@
 #!/bin/sh
 root="$(git rev-parse --show-toplevel)"
 if command -v python3 >/dev/null 2>&1; then py=python3; else py=python; fi
-exec "$py" "$root/share/version_bump.py" "$1"
+exec "$py" "$root/share/version_bump.py"
