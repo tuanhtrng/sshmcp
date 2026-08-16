@@ -1,0 +1,5 @@
+{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exec","arguments":{"command":"pwd","session":"dev"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"exec","arguments":{"command":"echo second","session":"dev"}}}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"session_close","arguments":{"session":"dev"}}}
+{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"session_close","arguments":{"session":"dev"}}}

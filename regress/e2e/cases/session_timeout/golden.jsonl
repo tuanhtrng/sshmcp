@@ -1,0 +1,2 @@
+{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {"tools": {}}, "protocolVersion": "2024-11-05", "serverInfo": {"name": "sshmcp", "version": "VERSION"}}}
+{"id": 1, "jsonrpc": "2.0", "result": {"content": [{"text": "{\"exit_code\":-1,\"is_session_dead\":true,\"is_timed_out\":true,\"is_truncated\":false,\"session\":\"dev\",\"stderr\":\"\",\"stdout\":\"\"}", "type": "text"}], "isError": false}}

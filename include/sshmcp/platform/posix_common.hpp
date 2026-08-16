@@ -10,11 +10,117 @@
 
 #include <chrono>
 #include <expected>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace sshmcp {
+
+struct posix_stream_state_t {
+    pid_t pid{-1};
+    int stdin_fd{-1};
+    int stdout_fd{-1};
+    int stderr_fd{-1};
+    bool is_killed{};
+
+    ~posix_stream_state_t() {
+        if (pid > 0 && !is_killed) {
+            kill(pid, SIGKILL);
+            auto status = 0;
+            waitpid(pid, &status, 0);
+        }
+        for (auto const fd : {stdin_fd, stdout_fd, stderr_fd}) {
+            if (fd >= 0) {
+                close(fd);
+            }
+        }
+    }
+};
+
+inline auto posix_stream_spawn(std::vector<std::string> const& argv)
+    -> std::expected<std::shared_ptr<posix_stream_state_t>, error_t> {
+    int in_pipe[2];
+    int out_pipe[2];
+    int err_pipe[2];
+    if (pipe(in_pipe) != 0 || pipe(out_pipe) != 0 || pipe(err_pipe) != 0) {
+        return std::unexpected{error_t{"pipe() failed"}};
+    }
+    auto const pid = fork();
+    if (pid < 0) {
+        return std::unexpected{error_t{"fork() failed"}};
+    }
+    if (pid == 0) {
+        dup2(in_pipe[0], 0);
+        dup2(out_pipe[1], 1);
+        dup2(err_pipe[1], 2);
+        close(in_pipe[0]);
+        close(in_pipe[1]);
+        close(out_pipe[0]);
+        close(out_pipe[1]);
+        close(err_pipe[0]);
+        close(err_pipe[1]);
+        auto argv_c = std::vector<char*>{};
+        argv_c.reserve(argv.size() + 1);
+        for (auto const& arg : argv) {
+            argv_c.push_back(const_cast<char*>(arg.c_str()));
+        }
+        argv_c.push_back(nullptr);
+        execvp(argv_c[0], argv_c.data());
+        _exit(127);
+    }
+    close(in_pipe[0]);
+    close(out_pipe[1]);
+    close(err_pipe[1]);
+    fcntl(out_pipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(err_pipe[0], F_SETFL, O_NONBLOCK);
+    auto state = std::make_shared<posix_stream_state_t>();
+    state->pid = pid;
+    state->stdin_fd = in_pipe[1];
+    state->stdout_fd = out_pipe[0];
+    state->stderr_fd = err_pipe[0];
+    return state;
+}
+
+inline auto posix_stream_read(int fd,
+                              std::chrono::steady_clock::time_point deadline)
+    -> std::expected<chunk_t, error_t> {
+    auto chunk = chunk_t{};
+    if (fd < 0) {
+        chunk.is_closed = true;
+        return chunk;
+    }
+    while (true) {
+        char local[4096];
+        auto const count = read(fd, local, sizeof(local));
+        if (count > 0) {
+            chunk.data.append(local, static_cast<std::size_t>(count));
+            continue; // drain what's available
+        }
+        if (count == 0) {
+            chunk.is_closed = true;
+            return chunk;
+        }
+        if (!chunk.data.empty()) {
+            return chunk; // got something this call
+        }
+        auto const now = std::chrono::steady_clock::now();
+        if (now >= deadline) {
+            return chunk; // empty slice
+        }
+        auto const wait_ms =
+            std::chrono::duration_cast<std::chrono::milliseconds>(deadline -
+                                                                  now)
+                .count();
+        pollfd fds[1] = {{fd, POLLIN, 0}};
+        if (poll(fds, 1, static_cast<int>(wait_ms)) < 0) {
+            return std::unexpected{error_t{"poll() failed"}};
+        }
+        if ((fds[0].revents & (POLLIN | POLLHUP)) == 0) {
+            return chunk; // deadline
+        }
+    }
+}
 
 inline auto posix_spawn_capture(spawn_request_t const& request)
     -> std::expected<spawn_result_t, error_t> {

@@ -1,0 +1,5 @@
+{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {"tools": {}}, "protocolVersion": "2024-11-05", "serverInfo": {"name": "sshmcp", "version": "VERSION"}}}
+{"id": 1, "jsonrpc": "2.0", "result": {"content": [{"text": "{\"exit_code\":0,\"is_session_dead\":false,\"is_timed_out\":false,\"is_truncated\":false,\"session\":\"dev\",\"stderr\":\"\",\"stdout\":\"/home/dev\\n\"}", "type": "text"}], "isError": false}}
+{"id": 2, "jsonrpc": "2.0", "result": {"content": [{"text": "{\"exit_code\":0,\"is_session_dead\":false,\"is_timed_out\":false,\"is_truncated\":false,\"session\":\"dev\",\"stderr\":\"\",\"stdout\":\"second\\n\"}", "type": "text"}], "isError": false}}
+{"id": 3, "jsonrpc": "2.0", "result": {"content": [{"text": "closed dev", "type": "text"}], "isError": false}}
+{"id": 4, "jsonrpc": "2.0", "result": {"content": [{"text": "no such session: dev", "type": "text"}], "isError": true}}

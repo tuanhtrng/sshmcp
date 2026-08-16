@@ -1,0 +1,2 @@
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "sh"], "stdin": ""}
+{"session_command": ["sleep 30"]}

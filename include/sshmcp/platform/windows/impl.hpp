@@ -8,8 +8,12 @@
 #include <fcntl.h>
 #include <io.h>
 
+#include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <expected>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -17,6 +21,45 @@
 #include <vector>
 
 namespace sshmcp {
+
+struct stream_state_t {
+    struct pipe_buffer_t {
+        std::mutex mutex;
+        std::condition_variable ready;
+        std::string data;
+        bool is_closed{};
+    };
+    HANDLE process{};
+    HANDLE thread{};
+    HANDLE stdin_write{};
+    pipe_buffer_t out;
+    pipe_buffer_t err;
+    std::jthread out_reader;
+    std::jthread err_reader;
+    bool is_killed{};
+
+    ~stream_state_t() {
+        if (process != nullptr) {
+            TerminateProcess(process, 1);
+        }
+        if (stdin_write != nullptr) {
+            CloseHandle(stdin_write);
+            stdin_write = nullptr;
+        }
+        if (out_reader.joinable()) {
+            out_reader.join();
+        }
+        if (err_reader.joinable()) {
+            err_reader.join();
+        }
+        if (process != nullptr) {
+            CloseHandle(process);
+        }
+        if (thread != nullptr) {
+            CloseHandle(thread);
+        }
+    }
+};
 
 inline auto utf8_to_wide(std::string_view text) -> std::wstring {
     if (text.empty()) {
@@ -174,6 +217,119 @@ class platform_impl_t : public subprocess_base_t<platform_impl_t> {
                               .stderr_text = std::move(stderr_text),
                               .exit_code = static_cast<int>(exit_code),
                               .is_timed_out = is_timed_out};
+    }
+
+    using stream_id_t = std::shared_ptr<stream_state_t>;
+
+    auto stream_spawn_impl(std::vector<std::string> const& argv)
+        -> std::expected<stream_id_t, error_t> {
+        auto security = SECURITY_ATTRIBUTES{};
+        security.nLength = sizeof(security);
+        security.bInheritHandle = TRUE;
+        auto in_read = HANDLE{};
+        auto in_write = HANDLE{};
+        auto out_read = HANDLE{};
+        auto out_write = HANDLE{};
+        auto err_read = HANDLE{};
+        auto err_write = HANDLE{};
+        if (!CreatePipe(&in_read, &in_write, &security, 0) ||
+            !CreatePipe(&out_read, &out_write, &security, 0) ||
+            !CreatePipe(&err_read, &err_write, &security, 0)) {
+            return std::unexpected{error_t{"CreatePipe failed"}};
+        }
+        SetHandleInformation(in_write, HANDLE_FLAG_INHERIT, 0);
+        SetHandleInformation(out_read, HANDLE_FLAG_INHERIT, 0);
+        SetHandleInformation(err_read, HANDLE_FLAG_INHERIT, 0);
+        auto startup = STARTUPINFOW{};
+        startup.cb = sizeof(startup);
+        startup.dwFlags = STARTF_USESTDHANDLES;
+        startup.hStdInput = in_read;
+        startup.hStdOutput = out_write;
+        startup.hStdError = err_write;
+        auto process = PROCESS_INFORMATION{};
+        auto line = build_command_line(argv);
+        auto const created = CreateProcessW(
+            nullptr, line.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+            nullptr, nullptr, &startup, &process);
+        CloseHandle(in_read);
+        CloseHandle(out_write);
+        CloseHandle(err_write);
+        if (!created) {
+            CloseHandle(in_write);
+            CloseHandle(out_read);
+            CloseHandle(err_read);
+            return std::unexpected{
+                error_t{"CreateProcess failed: " + argv.front()}};
+        }
+        auto state = std::make_shared<stream_state_t>();
+        state->process = process.hProcess;
+        state->thread = process.hThread;
+        state->stdin_write = in_write;
+        auto const pump = [](HANDLE handle,
+                             stream_state_t::pipe_buffer_t& buffer) {
+            char local[4096];
+            auto count = DWORD{};
+            while (ReadFile(handle, local, sizeof(local), &count, nullptr) &&
+                   count > 0) {
+                auto lock = std::lock_guard{buffer.mutex};
+                buffer.data.append(local, count);
+                buffer.ready.notify_all();
+            }
+            {
+                auto lock = std::lock_guard{buffer.mutex};
+                buffer.is_closed = true;
+                buffer.ready.notify_all();
+            }
+            CloseHandle(handle);
+        };
+        state->out_reader = std::jthread{[state = state.get(), out_read, pump] {
+            pump(out_read, state->out);
+        }};
+        state->err_reader = std::jthread{[state = state.get(), err_read, pump] {
+            pump(err_read, state->err);
+        }};
+        return state;
+    }
+
+    auto stream_write_impl(stream_id_t const& id, std::string_view data)
+        -> bool {
+        auto offset = std::size_t{0};
+        while (offset < data.size()) {
+            auto written = DWORD{};
+            if (!WriteFile(id->stdin_write, data.data() + offset,
+                           static_cast<DWORD>(data.size() - offset), &written,
+                           nullptr)) {
+                return false;
+            }
+            offset += written;
+        }
+        return true;
+    }
+
+    auto stream_read_impl(stream_id_t const& id, stream_t which,
+                          std::chrono::steady_clock::time_point deadline)
+        -> std::expected<chunk_t, error_t> {
+        auto& buffer = which == stream_t::STDOUT ? id->out : id->err;
+        auto lock = std::unique_lock{buffer.mutex};
+        buffer.ready.wait_until(lock, deadline, [&buffer] {
+            return !buffer.data.empty() || buffer.is_closed;
+        });
+        auto chunk = chunk_t{.data = std::move(buffer.data),
+                             .is_closed = buffer.is_closed};
+        buffer.data.clear();
+        return chunk;
+    }
+
+    auto stream_kill_impl(stream_id_t const& id) -> void {
+        if (id->is_killed) {
+            return;
+        }
+        id->is_killed = true;
+        TerminateProcess(id->process, 1);
+        if (id->stdin_write != nullptr) {
+            CloseHandle(id->stdin_write);
+            id->stdin_write = nullptr;
+        }
     }
 };
 

@@ -6,6 +6,8 @@
 #include <expected>
 #include <print>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace sshmcp {
 
@@ -45,6 +47,32 @@ class subprocess_base_t {
             }
         }
         return result;
+    }
+
+    auto stream_spawn(std::vector<std::string> const& argv) {
+        if (log_level == log_level_t::DEBUG) {
+            std::println(stderr, "sshmcp: stream spawn: {}",
+                         argv.empty() ? "" : argv.front());
+        }
+        return static_cast<Derived*>(this)->stream_spawn_impl(argv);
+    }
+
+    template <typename StreamId>
+    auto stream_write(StreamId const& id, std::string_view data) -> bool {
+        return static_cast<Derived*>(this)->stream_write_impl(id, data);
+    }
+
+    template <typename StreamId>
+    auto stream_read(StreamId const& id, stream_t which,
+                     std::chrono::steady_clock::time_point deadline)
+        -> std::expected<chunk_t, error_t> {
+        return static_cast<Derived*>(this)->stream_read_impl(id, which,
+                                                             deadline);
+    }
+
+    template <typename StreamId>
+    auto stream_kill(StreamId const& id) -> void {
+        static_cast<Derived*>(this)->stream_kill_impl(id);
     }
 
   private:
