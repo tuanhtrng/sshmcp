@@ -35,7 +35,7 @@ struct spawn_result_t {
     bool is_timed_out{};
 };
 
-enum class stream_t { OUT, ERR };
+enum class stream_t { STDOUT, STDERR };
 
 struct chunk_t {
     std::string data;

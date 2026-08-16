@@ -21,7 +21,7 @@ RULES = [
 ]
 ENUM_COLLISION = re.compile(
     r"enum\s+class[^;{]*\{[^}]*"
-    r"\b(ERROR|IGNORE|DELETE|SMALL|TRUE|FALSE|INFINITE)\b",
+    r"\b(ERROR|IGNORE|DELETE|SMALL|TRUE|FALSE|INFINITE|IN|OUT|ERR|OPTIONAL)\b",
     re.DOTALL)
 SCAN = ("app", "include/sshmcp", "regress/unit")
 
