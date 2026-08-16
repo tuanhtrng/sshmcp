@@ -1,12 +1,15 @@
 #include <sshmcp/config.hpp>
 #include <sshmcp/mcp.hpp>
+#include <sshmcp/session.hpp>
 #include <sshmcp/subprocess.hpp>
 #include <sshmcp/tools.hpp>
 
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <print>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -24,12 +27,25 @@ auto main(int argc, char** argv) -> int {
     }
     auto impl = sshmcp::platform_impl_t{config->log_level};
     impl.init_stdio();
+    auto manager =
+        sshmcp::session_manager_t<sshmcp::platform_impl_t>{impl, *config};
     auto server =
         sshmcp::server_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
-                         sshmcp::write_file_tool_t>{sshmcp::context_t{
+                         sshmcp::write_file_tool_t,
+                         sshmcp::session_close_tool_t>{sshmcp::context_t{
             .config = *config,
-            .spawn = [&impl](sshmcp::spawn_request_t const& request) {
-                return impl.run(request);
-            }}};
+            .spawn =
+                [&impl](sshmcp::spawn_request_t const& request) {
+                    return impl.run(request);
+                },
+            .session_exec =
+                [&manager](std::string_view name, std::string_view command,
+                           std::int64_t timeout_ms) {
+                    return manager.exec(name, command, timeout_ms);
+                },
+            .session_close =
+                [&manager](std::string_view name) {
+                    return manager.close(name);
+                }}};
     return server.run(std::cin, std::cout);
 }

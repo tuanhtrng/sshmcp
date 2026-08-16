@@ -4,8 +4,10 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cstdint>
 #include <expected>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace {
@@ -108,6 +110,76 @@ auto context_with(sshmcp::spawn_result_t reply,
     auto const no_content =
         sshmcp::write_file_tool_t::invoke(context, {{"path", "/x"}});
     t::expect(no_content.is_error, "content required");
+});
+
+[[maybe_unused]] auto const t6 = t::add_test("exec session", [] {
+    auto seen_name = std::string{};
+    auto seen_command = std::string{};
+    auto context = sshmcp::context_t{
+        .config = {},
+        .spawn = {},
+        .session_exec = [&](std::string_view name, std::string_view command,
+                            std::int64_t)
+            -> std::expected<sshmcp::session_result_t, sshmcp::error_t> {
+            seen_name = name;
+            seen_command = command;
+            return sshmcp::session_result_t{
+                .result = {.stdout_text = "in session\n", .exit_code = 0},
+                .is_session_dead = false};
+        },
+        .session_close = {}};
+    auto const result = sshmcp::exec_tool_t::invoke(
+        context, {{"command", "make"}, {"cwd", "/src"}, {"session", "dev"}});
+    t::expect(!result.is_error, "ok");
+    t::expect(seen_name == "dev", "session name");
+    t::expect(seen_command == "cd '/src' && make", "cwd folded into command");
+    auto const body = nlohmann::json::parse(result.text);
+    t::expect(body["session"] == "dev", "session echoed");
+    t::expect(body["is_session_dead"] == false, "alive");
+    t::expect(body["stdout"] == "in session\n", "stdout");
+
+    auto missing = sshmcp::context_t{.config = {}, .spawn = {}};
+    auto const no_backend = sshmcp::exec_tool_t::invoke(
+        missing, {{"command", "x"}, {"session", "s"}});
+    t::expect(no_backend.is_error, "no session backend");
+});
+
+[[maybe_unused]] auto const t7 = t::add_test("session dead", [] {
+    auto context = sshmcp::context_t{
+        .config = {},
+        .spawn = {},
+        .session_exec = [](std::string_view, std::string_view, std::int64_t)
+            -> std::expected<sshmcp::session_result_t, sshmcp::error_t> {
+            return sshmcp::session_result_t{.result = {.stdout_text = "partial",
+                                                       .exit_code = -1,
+                                                       .is_timed_out = true},
+                                            .is_session_dead = true};
+        },
+        .session_close = {}};
+    auto const result = sshmcp::exec_tool_t::invoke(
+        context, {{"command", "sleep 99"}, {"session", "dev"}});
+    auto const body = nlohmann::json::parse(result.text);
+    t::expect(body["is_session_dead"] == true, "dead");
+    t::expect(body["is_timed_out"] == true, "timed out");
+    t::expect(body["exit_code"] == -1, "exit -1");
+});
+
+[[maybe_unused]] auto const t8 = t::add_test("close tool", [] {
+    auto context =
+        sshmcp::context_t{.config = {},
+                          .spawn = {},
+                          .session_exec = {},
+                          .session_close = [](std::string_view name) -> bool {
+                              return name == "known";
+                          }};
+    auto const hit =
+        sshmcp::session_close_tool_t::invoke(context, {{"session", "known"}});
+    t::expect(!hit.is_error, "close ok");
+    t::expect(hit.text == "closed known", "message");
+    auto const miss =
+        sshmcp::session_close_tool_t::invoke(context, {{"session", "ghost"}});
+    t::expect(miss.is_error, "unknown errors");
+    t::expect(miss.text == "no such session: ghost", "unknown message");
 });
 
 } // namespace

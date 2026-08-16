@@ -39,8 +39,37 @@ struct exec_tool_t {
                   {"timeout_ms",
                    {{"type", "integer"},
                     {"description", "timeout in milliseconds "
-                                    "(default 60000, max 600000)"}}}}},
+                                    "(default 60000, max 600000)"}}},
+                  {"session",
+                   {{"type", "string"},
+                    {"description", "named persistent shell; cwd/env persist "
+                                    "across calls with the same name "
+                                    "(auto-created, idle-reaped)"}}}}},
                 {"required", nlohmann::json::array({"command"})}};
+    }
+
+    static auto invoke_session(context_t& context, std::string const& name,
+                               std::string const& command,
+                               std::int64_t timeout_ms) -> tool_result_t {
+        if (!context.session_exec) {
+            return error_result("exec: sessions unavailable in this build");
+        }
+        auto const spawned = context.session_exec(name, command, timeout_ms);
+        if (!spawned) {
+            return error_result("exec: " + spawned.error().message);
+        }
+        auto const& inner = spawned->result;
+        auto const out = truncate_middle(inner.stdout_text, MAX_OUTPUT_CHARS);
+        auto const err = truncate_middle(inner.stderr_text, MAX_OUTPUT_CHARS);
+        return {.text = dump_json(
+                    {{"stdout", out.text},
+                     {"stderr", err.text},
+                     {"exit_code", inner.is_timed_out ? -1 : inner.exit_code},
+                     {"is_truncated", out.is_truncated || err.is_truncated},
+                     {"is_timed_out", inner.is_timed_out},
+                     {"session", name},
+                     {"is_session_dead", spawned->is_session_dead}}),
+                .is_error = false};
     }
 
     static auto invoke(context_t& context, nlohmann::json const& arguments)
@@ -59,6 +88,11 @@ struct exec_tool_t {
             arguments["timeout_ms"].is_number_integer()) {
             timeout_ms = std::clamp(arguments["timeout_ms"].get<std::int64_t>(),
                                     std::int64_t{1}, MAX_TIMEOUT_MS);
+        }
+        if (arguments.contains("session") && arguments["session"].is_string()) {
+            return invoke_session(context,
+                                  arguments["session"].get<std::string>(),
+                                  exec_command(command, cwd), timeout_ms);
         }
         auto const spawned = context.spawn(spawn_request_t{
             .argv = build_ssh_argv(context.config, exec_command(command, cwd)),
@@ -174,6 +208,37 @@ struct write_file_tool_t {
         }
         return {.text = std::format("wrote {} bytes to {}", size, path),
                 .is_error = false};
+    }
+};
+
+struct session_close_tool_t {
+    static constexpr auto NAME = std::string_view{"session_close"};
+    static constexpr auto DESCRIPTION =
+        std::string_view{"Close a named persistent session opened via exec."};
+
+    static auto schema() -> nlohmann::json {
+        return {{"type", "object"},
+                {"properties",
+                 {{"session",
+                   {{"type", "string"}, {"description", "session name"}}}}},
+                {"required", nlohmann::json::array({"session"})}};
+    }
+
+    static auto invoke(context_t& context, nlohmann::json const& arguments)
+        -> tool_result_t {
+        if (!arguments.contains("session") ||
+            !arguments["session"].is_string()) {
+            return error_result(
+                "session_close: 'session' (string) is required");
+        }
+        if (!context.session_close) {
+            return error_result("session_close: sessions unavailable");
+        }
+        auto const name = arguments["session"].get<std::string>();
+        if (!context.session_close(name)) {
+            return error_result("no such session: " + name);
+        }
+        return {.text = "closed " + name, .is_error = false};
     }
 };
 

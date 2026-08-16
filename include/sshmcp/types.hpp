@@ -4,6 +4,7 @@
 #include <expected>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace sshmcp {
@@ -58,9 +59,16 @@ struct config_t {
     std::int64_t session_idle_ms{DEFAULT_SESSION_IDLE_MS};
 };
 
+using session_exec_fn_t =
+    std::function<std::expected<session_result_t, error_t>(
+        std::string_view, std::string_view, std::int64_t)>;
+using session_close_fn_t = std::function<bool(std::string_view)>;
+
 struct context_t {
     config_t config;
     spawn_fn_t spawn;
+    session_exec_fn_t session_exec;
+    session_close_fn_t session_close;
 };
 
 struct tool_result_t {

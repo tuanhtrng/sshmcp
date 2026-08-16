@@ -15,8 +15,9 @@ namespace {
 
 namespace t = sshmcp::test;
 
-using server_t = sshmcp::server_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
-                                  sshmcp::write_file_tool_t>;
+using server_t =
+    sshmcp::server_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
+                     sshmcp::write_file_tool_t, sshmcp::session_close_tool_t>;
 
 auto test_server() -> server_t {
     return server_t{sshmcp::context_t{
@@ -63,7 +64,7 @@ auto test_server() -> server_t {
     auto const list =
         server.handle_line(R"({"jsonrpc":"2.0","id":1,"method":"tools/list"})");
     auto const tools = nlohmann::json::parse(*list)["result"]["tools"];
-    t::expect(tools.size() == 3, "three tools listed");
+    t::expect(tools.size() == 4, "four tools listed");
 
     auto const call =
         server.handle_line(R"({"jsonrpc":"2.0","id":2,"method":"tools/call",)"
