@@ -48,7 +48,7 @@ VPS, reliably enough for real development work.
 | Variable | Meaning | Default |
 |---|---|---|
 | `SSHMCP_TARGET` | `user@host` or ssh_config alias | required (or argv[1]) |
-| `SSHMCP_SSH_EXE` | ssh command to spawn; whitespace-split into an argv prefix, so `python C:\x\fake_ssh.py` works (paths with spaces unsupported here — documented limitation) | `ssh` |
+| `SSHMCP_SSH_EXE` | ssh command to spawn; split into an argv prefix on whitespace, double quotes group tokens (`"C:\Program Files\Python314\python" fake_ssh.py`) | `ssh` |
 | `SSHMCP_SSH_ARGS` | extra args passed through to ssh | empty |
 | `SSHMCP_LOG` | `off` / `info` / `debug` | `info` |
 
@@ -240,7 +240,8 @@ Each defines
   regressions unit tests miss). Full handshake + all three tools,
   zero network.
 - **Linters (`share/linter/*.py`), all ctest jobs:**
-  - `header_only.py` — no `.cpp` outside `app/`
+  - `header_only.py` — no `.cpp` outside `app/` and `regress/`
+    (test runners are executables)
   - `banned_tokens.py` — `system(`, `popen`, `std::regex`, raw
     `new`/`delete`, `using namespace std` in headers, forbidden
     enumerator names, and the no-macro rule (`#define`/`#if` count
