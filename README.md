@@ -4,7 +4,8 @@ An MCP (Model Context Protocol) stdio server that lets an AI agent
 develop on a remote VPS over SSH. C++23, header-only, zero runtime
 dependencies beyond your OpenSSH client.
 
-Three tools: `exec` (run a command), `read_file`, `write_file`.
+Four tools: `exec` (one-shot or persistent session), `read_file`,
+`write_file` (text or base64 binary), `session_close`.
 Every operation shells out to `ssh`, so authentication, host keys,
 aliases, agents and `ProxyJump` all come from your existing
 `~/.ssh/config` — sshmcp adds no auth machinery of its own.
@@ -46,6 +47,25 @@ matrix (debug, ASan, CFI, `-march=native`).
 }
 ```
 
+## Sessions
+
+Pass `session: "<name>"` to `exec` and the command runs in a named
+persistent remote shell: cwd, env vars and activated venvs persist
+across calls, and the ~1 s SSH handshake is paid once per session
+instead of per command. Sessions are auto-created on first use,
+capped at 4 live, and reaped after 30 minutes idle
+(`SSHMCP_SESSION_IDLE_MS` overrides). `session_close` ends one
+explicitly. A timed-out session command kills the whole session
+(remote state is unknowable after a kill); the result carries
+`is_session_dead: true` and the next call recreates it.
+
+Limitations: session commands must not read stdin (use
+`write_file`) and must not emit the literal `@sshmcp:` sentinel.
+
+`read_file`/`write_file` accept `encoding: "base64"` for binary
+content up to 8 MiB. No encoder is needed on the remote host —
+ssh pipes are 8-bit clean and the codec runs locally.
+
 ## Environment variables
 
 | Variable | Meaning | Default |
@@ -54,6 +74,7 @@ matrix (debug, ASan, CFI, `-march=native`).
 | `SSHMCP_SSH_EXE` | ssh command; whitespace-split, `"..."` groups tokens | `ssh` |
 | `SSHMCP_SSH_ARGS` | extra args passed to ssh | empty |
 | `SSHMCP_LOG` | `off` / `info` / `debug` (stderr) | `info` |
+| `SSHMCP_SESSION_IDLE_MS` | idle reap for sessions | `1800000` |
 
 ## Security notes
 
