@@ -98,7 +98,8 @@ auto config_of() -> sshmcp::config_t {
     t::expect(!result->is_session_dead, "alive");
     t::expect(platform.spawn_count == 1, "one spawn");
 
-    manager.exec("dev", "echo again", 5'000);
+    t::expect(manager.exec("dev", "echo again", 5'000).has_value(),
+              "second exec ok");
     t::expect(platform.spawn_count == 1, "session reused, no respawn");
     t::expect(platform.last->written.size() == 2, "two payloads written");
     t::expect(platform.last->written[1].contains("echo again"),
@@ -109,11 +110,11 @@ auto config_of() -> sshmcp::config_t {
     auto platform = mock_platform_t{};
     auto manager =
         sshmcp::session_manager_t<mock_platform_t>{platform, config_of()};
-    manager.exec("dev", "true", 5'000);
+    t::expect(manager.exec("dev", "true", 5'000).has_value(), "warm up");
     t::expect(manager.close("dev"), "close known");
     t::expect(platform.last->is_killed, "killed");
     t::expect(!manager.close("dev"), "close unknown");
-    manager.exec("dev", "true", 5'000);
+    t::expect(manager.exec("dev", "true", 5'000).has_value(), "reopen");
     t::expect(platform.spawn_count == 2, "recreated after close");
 });
 
@@ -121,10 +122,10 @@ auto config_of() -> sshmcp::config_t {
     auto platform = mock_platform_t{};
     auto manager =
         sshmcp::session_manager_t<mock_platform_t>{platform, config_of()};
-    manager.exec("a", "true", 5'000);
-    manager.exec("b", "true", 5'000);
-    manager.exec("c", "true", 5'000);
-    manager.exec("d", "true", 5'000);
+    t::expect(manager.exec("a", "true", 5'000).has_value(), "open a");
+    t::expect(manager.exec("b", "true", 5'000).has_value(), "open b");
+    t::expect(manager.exec("c", "true", 5'000).has_value(), "open c");
+    t::expect(manager.exec("d", "true", 5'000).has_value(), "open d");
     auto const fifth = manager.exec("e", "true", 5'000);
     t::expect(!fifth.has_value(), "cap enforced");
     t::expect(fifth.error().message.contains("a"), "error names live sessions");
@@ -141,7 +142,7 @@ auto config_of() -> sshmcp::config_t {
     t::expect(result->result.exit_code == -1, "exit -1");
     t::expect(result->is_session_dead, "session dead");
     t::expect(platform.last->is_killed, "killed");
-    manager.exec("dev", "true", 5'000);
+    t::expect(manager.exec("dev", "true", 5'000).has_value(), "revive");
     t::expect(platform.spawn_count == 2, "dead session recreated");
 });
 

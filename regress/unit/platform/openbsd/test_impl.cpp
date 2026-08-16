@@ -69,24 +69,21 @@ auto stream_spawn_python(sshmcp::platform_impl_t& impl, std::string code)
         "sys.stdout.buffer.flush()) for l in iter(sys.stdin.readline,'')]");
     t::expect(spawned.has_value(), "spawn ok");
     auto const id = *spawned;
-    t::expect(impl.stream_write(id, "hello
-"), "write ok");
+    t::expect(impl.stream_write(id, "hello\n"), "write ok");
     auto text = std::string{};
-    auto const deadline = std::chrono::steady_clock::now() +
-                          std::chrono::seconds{20};
-    while (!text.contains("E:hello
-")) {
+    auto const deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds{20};
+    while (!text.contains("E:hello\n")) {
         auto const chunk =
             impl.stream_read(id, sshmcp::stream_t::STDOUT, deadline);
         t::expect(chunk.has_value(), "read ok");
         if (!chunk.has_value() || chunk->is_closed ||
             std::chrono::steady_clock::now() >= deadline) {
-        break;
+            break;
         }
         text += chunk->data;
     }
-    t::expect(text == "E:hello
-", "echo round trip");
+    t::expect(text == "E:hello\n", "echo round trip");
     impl.stream_kill(id);
     impl.stream_kill(id); // idempotent
 });
