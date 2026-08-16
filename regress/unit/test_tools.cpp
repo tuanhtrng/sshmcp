@@ -1,5 +1,6 @@
 #include "harness.hpp"
 
+#include <sshmcp/base64.hpp>
 #include <sshmcp/tools.hpp>
 
 #include <nlohmann/json.hpp>
@@ -180,6 +181,59 @@ auto context_with(sshmcp::spawn_result_t reply,
         sshmcp::session_close_tool_t::invoke(context, {{"session", "ghost"}});
     t::expect(miss.is_error, "unknown errors");
     t::expect(miss.text == "no such session: ghost", "unknown message");
+});
+
+[[maybe_unused]] auto const t9 = t::add_test("binary read", [] {
+    auto captured = sshmcp::spawn_request_t{};
+    auto const raw = std::string{"\x00\xff\x10hi", 5};
+    auto context = context_with({.stdout_text = raw, .exit_code = 0}, captured);
+    auto const result = sshmcp::read_file_tool_t::invoke(
+        context, {{"path", "/bin/x"}, {"encoding", "base64"}});
+    t::expect(!result.is_error, "ok");
+    t::expect(sshmcp::base64_decode(result.text).value() == raw,
+              "encoded round trip");
+
+    auto big = context_with(
+        {.stdout_text = std::string(sshmcp::MAX_BINARY_BYTES + 1, 'x'),
+         .exit_code = 0},
+        captured);
+    t::expect(sshmcp::read_file_tool_t::invoke(
+                  big, {{"path", "/big"}, {"encoding", "base64"}})
+                  .is_error,
+              "8 MiB cap");
+
+    auto text_ok = context_with(
+        {.stdout_text = std::string(sshmcp::MAX_READ_BYTES + 1, 'x'),
+         .exit_code = 0},
+        captured);
+    t::expect(!sshmcp::read_file_tool_t::invoke(
+                   text_ok, {{"path", "/t"}, {"encoding", "base64"}})
+                   .is_error,
+              "base64 mode allows >1MiB");
+
+    auto bad = context_with({.exit_code = 0}, captured);
+    t::expect(sshmcp::read_file_tool_t::invoke(
+                  bad, {{"path", "/x"}, {"encoding", "nope"}})
+                  .is_error,
+              "bad encoding rejected");
+});
+
+[[maybe_unused]] auto const t10 = t::add_test("binary write", [] {
+    auto captured = sshmcp::spawn_request_t{};
+    auto context = context_with({.exit_code = 0}, captured);
+    auto const raw = std::string{"\x01\x02\x00zz", 5};
+    auto const result = sshmcp::write_file_tool_t::invoke(
+        context, {{"path", "/bin/x"},
+                  {"content", sshmcp::base64_encode(raw)},
+                  {"encoding", "base64"}});
+    t::expect(!result.is_error, "ok");
+    t::expect(captured.stdin_data == raw, "raw bytes piped");
+    t::expect(result.text.contains("5 bytes"), "decoded size reported");
+
+    auto const bad = sshmcp::write_file_tool_t::invoke(
+        context, {{"path", "/x"}, {"content", "!!!!"}, {"encoding", "base64"}});
+    t::expect(bad.is_error, "invalid base64 rejected");
+    t::expect(bad.text.contains("base64"), "clear error");
 });
 
 } // namespace
