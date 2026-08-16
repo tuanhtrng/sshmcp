@@ -195,8 +195,14 @@ Each defines
   X.Y.Z)` in `CMakeLists.txt`. `configure_file` generates
   `<build>/generated/sshmcp/version.hpp` containing
   `inline constexpr std::string_view VERSION` (constexpr, not a
-  macro), reported via MCP `initialize`. CI auto-tags `vX.Y.Z` on
-  `main` when the CMakeLists version changes. Starts at `0.1.0`.
+  macro), reported via MCP `initialize`. A `commit-msg` hook
+  (`.githooks/` + `core.hooksPath`, `share/version_bump.py`)
+  bumps the version on every commit from the conventional type:
+  `!`/`BREAKING CHANGE` → major, `feat` → minor, else patch;
+  `[no bump]` or an explicit staged version change skips it. CI
+  auto-tags `vX.Y.Z` on `main` when the CMakeLists version
+  changes — every main commit is a tagged release. E2E goldens
+  normalize `serverInfo.version`. Starts at `0.1.0`.
 - **Conventional commits** (`feat:` / `fix:` / `chore:` / …).
 - **License:** MIT.
 

@@ -1,0 +1,7 @@
+{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {"tools": {}}, "protocolVersion": "2024-11-05", "serverInfo": {"name": "sshmcp", "version": "VERSION"}}}
+{"error": {"code": -32700, "message": "invalid JSON"}, "id": null, "jsonrpc": "2.0"}
+{"error": {"code": -32601, "message": "method not found: no/such/method"}, "id": 1, "jsonrpc": "2.0"}
+{"error": {"code": -32602, "message": "unknown tool: nope"}, "id": 2, "jsonrpc": "2.0"}
+{"id": 3, "jsonrpc": "2.0", "result": {"content": [{"text": "exec: 'command' (string) is required", "type": "text"}], "isError": true}}
+{"id": 4, "jsonrpc": "2.0", "result": {"content": [{"text": "{\"exit_code\":1,\"is_timed_out\":false,\"is_truncated\":false,\"stderr\":\"\",\"stdout\":\"\"}", "type": "text"}], "isError": false}}
+{"id": 5, "jsonrpc": "2.0", "result": {"content": [{"text": "read_file failed: cat: /nope: No such file or directory\n", "type": "text"}], "isError": true}}

@@ -1,0 +1,99 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  windows-msvc:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: choco install ninja -y
+      - run: cmake --preset ci-windows-msvc
+      - run: cmake --build --preset ci-windows-msvc
+      - run: ctest --preset ci-windows-msvc
+
+  linux-gcc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y
+          g++-14 ninja-build clang-format
+      - run: cmake --preset ci-linux-gcc
+      - run: cmake --build --preset ci-linux-gcc
+      - run: ctest --preset ci-linux-gcc
+
+  linux-clang:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y
+          clang-18 ninja-build clang-format
+      - run: cmake --preset ci-linux-clang
+      - run: cmake --build --preset ci-linux-clang
+      - run: ctest --preset ci-linux-clang
+
+  linux-clang-asan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y
+          clang-18 ninja-build clang-format
+      - run: cmake --preset ci-linux-clang-asan
+      - run: cmake --build --preset ci-linux-clang-asan
+      - run: ctest --preset ci-linux-clang-asan
+
+  clang-tidy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y
+          clang-tidy-18 clang-18 ninja-build
+      - run: cmake --preset ci-linux-clang
+      - run: >
+          clang-tidy-18 app/main.cpp regress/unit/main.cpp
+          --
+          -std=c++23
+          -Iinclude
+          -Iinclude/sshmcp/platform/linux
+          -Iregress/unit
+          -Ibuild/ci-linux-clang/generated
+
+  openbsd:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: vmactions/openbsd-vm@v1
+        with:
+          prepare: pkg_add cmake ninja python
+          run: |
+            cmake --preset openbsd-clang-release
+            cmake --build --preset openbsd-clang-release
+            ctest --preset openbsd-clang-release
+
+  autotag:
+    if: github.ref == 'refs/heads/main'
+    needs: [windows-msvc, linux-gcc, linux-clang,
+            linux-clang-asan, clang-tidy]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: tag version if new
+        run: |
+          version=$(sed -n \
+            's/^project(sshmcp VERSION \([0-9.]*\).*/\1/p' \
+            CMakeLists.txt)
+          if [ -z "$version" ]; then exit 1; fi
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "v$version exists, rolling on"
+          else
+            git tag "v$version"
+            git push origin "v$version"
+          fi

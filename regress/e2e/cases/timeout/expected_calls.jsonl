@@ -1,0 +1,1 @@
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "sleep 30"], "stdin": ""}
