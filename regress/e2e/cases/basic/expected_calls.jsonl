@@ -1,0 +1,3 @@
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "echo hello"], "stdin": ""}
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "mkdir -p '/tmp' && cat > '/tmp/a b.txt'"], "stdin": "hi\n"}
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "cat '/tmp/a b.txt'"], "stdin": ""}

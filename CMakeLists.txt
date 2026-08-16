@@ -34,3 +34,16 @@ target_include_directories(sshmcp_unit PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/unit)
 target_link_libraries(sshmcp_unit PRIVATE sshmcp)
 add_test(NAME unit COMMAND sshmcp_unit)
+
+add_test(NAME e2e_basic COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/basic)
+add_test(NAME e2e_errors COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/errors)
+add_test(NAME e2e_timeout COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/timeout)
