@@ -26,6 +26,7 @@ add_executable(sshmcp_unit
     regress/unit/test_util.cpp
     regress/unit/test_config.cpp
     regress/unit/test_jsonrpc.cpp
-    regress/unit/test_tools.cpp)
+    regress/unit/test_tools.cpp
+    regress/unit/test_registry.cpp)
 target_link_libraries(sshmcp_unit PRIVATE sshmcp)
 add_test(NAME unit COMMAND sshmcp_unit)
