@@ -18,3 +18,9 @@ target_link_libraries(sshmcp_app PRIVATE sshmcp)
 set_target_properties(sshmcp_app PROPERTIES OUTPUT_NAME sshmcp)
 
 enable_testing()
+
+add_executable(sshmcp_unit
+    regress/unit/main.cpp
+    regress/unit/test_harness.cpp)
+target_link_libraries(sshmcp_unit PRIVATE sshmcp)
+add_test(NAME unit COMMAND sshmcp_unit)
