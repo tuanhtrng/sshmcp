@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(sshmcp VERSION 0.7.4 LANGUAGES CXX)
+project(sshmcp VERSION 0.7.5 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
