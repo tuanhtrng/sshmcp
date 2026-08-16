@@ -13,7 +13,7 @@ aliases, agents and `ProxyJump` all come from your existing
 
 - OpenSSH client (`ssh` on PATH, or point `SSHMCP_SSH_EXE` at one)
 - To build: CMake 3.28+, Ninja, a C++23 toolchain
-  (MSVC 19.38+, gcc 14+, or clang 18+)
+  (MSVC 19.38+, gcc 14+, or clang 19+)
 - Python 3 for the regress suites and linters
 
 ## Build

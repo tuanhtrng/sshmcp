@@ -183,7 +183,7 @@ Each defines
 - **Modern C++23 floor:** `std::expected`, `std::print`/`println`
   (stderr logging), `std::source_location`, ranges, designated
   initializers, `std::span`. Toolchains: MSVC 19.38+, gcc 14+,
-  clang 18+.
+  clang 19+ (clang 18 lacks __cpp_concepts 202002, gating std::expected in libstdc++).
 - **Zero conditions in CMakeLists.txt.** No `if()`, no
   `$<CXX_COMPILER_ID>` generator expressions. All platform/compiler
   variance lives in `CMakePresets.json` (cache variables, flags,
