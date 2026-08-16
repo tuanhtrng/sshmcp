@@ -296,4 +296,95 @@ struct session_close_tool_t {
     }
 };
 
+inline auto parse_port(nlohmann::json const& arguments, char const* key)
+    -> int {
+    if (!arguments.contains(key) || !arguments[key].is_number_integer()) {
+        return 0;
+    }
+    auto const port = arguments[key].get<std::int64_t>();
+    return port >= 1 && port <= 65535 ? static_cast<int>(port) : 0;
+}
+
+struct forward_open_tool_t {
+    static constexpr auto NAME = std::string_view{"forward_open"};
+    static constexpr auto DESCRIPTION = std::string_view{
+        "Open a local port forward: 127.0.0.1:<local_port> on "
+        "this machine tunnels to <remote_host>:<remote_port> as "
+        "seen from the remote host."};
+
+    static auto schema() -> nlohmann::json {
+        return {
+            {"type", "object"},
+            {"properties",
+             {{"local_port",
+               {{"type", "integer"},
+                {"description", "local loopback port (1-65535)"}}},
+              {"remote_port",
+               {{"type", "integer"},
+                {"description", "port on the remote side"}}},
+              {"remote_host",
+               {{"type", "string"},
+                {"description", "host as resolved from the remote side "
+                                "(default localhost)"}}}}},
+            {"required", nlohmann::json::array({"local_port", "remote_port"})}};
+    }
+
+    static auto invoke(context_t& context, nlohmann::json const& arguments)
+        -> tool_result_t {
+        auto const local_port = parse_port(arguments, "local_port");
+        auto const remote_port = parse_port(arguments, "remote_port");
+        if (local_port == 0 || remote_port == 0) {
+            return error_result("forward_open: 'local_port' and 'remote_port' "
+                                "must be integers in 1-65535");
+        }
+        auto remote_host = std::string{"localhost"};
+        if (arguments.contains("remote_host") &&
+            arguments["remote_host"].is_string()) {
+            remote_host = arguments["remote_host"].get<std::string>();
+        }
+        if (!context.forward_open) {
+            return error_result("forward_open: forwarding unavailable");
+        }
+        auto const opened =
+            context.forward_open(local_port, remote_host, remote_port);
+        if (!opened) {
+            return error_result("forward_open: " + opened.error().message);
+        }
+        return {.text = *opened, .is_error = false};
+    }
+};
+
+struct forward_close_tool_t {
+    static constexpr auto NAME = std::string_view{"forward_close"};
+    static constexpr auto DESCRIPTION =
+        std::string_view{"Close a port forward opened with forward_open."};
+
+    static auto schema() -> nlohmann::json {
+        return {{"type", "object"},
+                {"properties",
+                 {{"local_port",
+                   {{"type", "integer"},
+                    {"description", "local port of the forward"}}}}},
+                {"required", nlohmann::json::array({"local_port"})}};
+    }
+
+    static auto invoke(context_t& context, nlohmann::json const& arguments)
+        -> tool_result_t {
+        auto const local_port = parse_port(arguments, "local_port");
+        if (local_port == 0) {
+            return error_result(
+                "forward_close: 'local_port' must be an integer "
+                "in 1-65535");
+        }
+        if (!context.forward_close) {
+            return error_result("forward_close: forwarding unavailable");
+        }
+        if (!context.forward_close(local_port)) {
+            return error_result(std::format("no such forward: {}", local_port));
+        }
+        return {.text = std::format("closed forward {}", local_port),
+                .is_error = false};
+    }
+};
+
 } // namespace sshmcp

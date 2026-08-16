@@ -259,4 +259,56 @@ auto context_with(sshmcp::spawn_result_t reply,
     t::expect(!ok.is_error, "allowed passes");
 });
 
+[[maybe_unused]] auto const t12 = t::add_test("forward tools", [] {
+    auto opened_args = std::string{};
+    auto closed_port = 0;
+    auto context = sshmcp::context_t{};
+    context.forward_open =
+        [&](int local_port, std::string_view remote_host,
+            int remote_port) -> std::expected<std::string, sshmcp::error_t> {
+        opened_args =
+            std::format("{}:{}:{}", local_port, remote_host, remote_port);
+        return std::string{"forwarding ok"};
+    };
+    context.forward_close = [&](int local_port) -> bool {
+        closed_port = local_port;
+        return local_port == 18080;
+    };
+
+    auto const opened = sshmcp::forward_open_tool_t::invoke(
+        context, {{"local_port", 18080}, {"remote_port", 3000}});
+    t::expect(!opened.is_error, "open ok");
+    t::expect(opened.text == "forwarding ok", "text passthrough");
+    t::expect(opened_args == "18080:localhost:3000", "default remote_host");
+
+    sshmcp::forward_open_tool_t::invoke(context, {{"local_port", 18081},
+                                                  {"remote_port", 80},
+                                                  {"remote_host", "10.0.0.5"}});
+    t::expect(opened_args == "18081:10.0.0.5:80", "explicit remote_host");
+
+    for (auto const bad_port : {0, 70000}) {
+        auto const bad = sshmcp::forward_open_tool_t::invoke(
+            context, {{"local_port", bad_port}, {"remote_port", 80}});
+        t::expect(bad.is_error, "port range enforced");
+    }
+    auto const not_int = sshmcp::forward_open_tool_t::invoke(
+        context, {{"local_port", "80"}, {"remote_port", 80}});
+    t::expect(not_int.is_error, "string port rejected");
+
+    auto const closed =
+        sshmcp::forward_close_tool_t::invoke(context, {{"local_port", 18080}});
+    t::expect(!closed.is_error, "close ok");
+    t::expect(closed.text == "closed forward 18080", "close text");
+    t::expect(closed_port == 18080, "close routed");
+    auto const missing =
+        sshmcp::forward_close_tool_t::invoke(context, {{"local_port", 18099}});
+    t::expect(missing.is_error, "unknown forward errors");
+
+    auto bare = sshmcp::context_t{};
+    t::expect(sshmcp::forward_open_tool_t::invoke(
+                  bare, {{"local_port", 1}, {"remote_port", 2}})
+                  .is_error,
+              "no backend errors");
+});
+
 } // namespace
