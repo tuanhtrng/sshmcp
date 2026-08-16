@@ -40,7 +40,7 @@
        "CMAKE_BUILD_TYPE": "Release",
        "CMAKE_CXX_COMPILER": "g++-14",
        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
-       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -fhardened -fstack-clash-protection -fcf-protection=full -ftrivial-auto-var-init=zero",
+       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -fhardened -ftrivial-auto-var-init=zero",
        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-z,noexecstack"}},
     {"name": "linux-clang-debug", "inherits": "linux",
      "cacheVariables": {
@@ -78,7 +78,7 @@
        "CMAKE_BUILD_TYPE": "Release",
        "CMAKE_CXX_COMPILER": "g++-14",
        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
-       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -march=native -fhardened -fstack-clash-protection -fcf-protection=full -ftrivial-auto-var-init=zero",
+       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -march=native -fhardened -ftrivial-auto-var-init=zero",
        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-z,noexecstack"}},
 
     {"name": "ci-windows-msvc", "inherits": "windows",
@@ -93,7 +93,7 @@
        "CMAKE_BUILD_TYPE": "Release",
        "CMAKE_CXX_COMPILER": "g++-14",
        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
-       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror -fhardened -fstack-clash-protection -fcf-protection=full -ftrivial-auto-var-init=zero",
+       "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror -fhardened -ftrivial-auto-var-init=zero",
        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-z,noexecstack"}},
     {"name": "ci-linux-clang", "inherits": "linux",
      "cacheVariables": {

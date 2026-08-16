@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y
-          clang-18 ninja-build clang-format
+          clang-18 libstdc++-14-dev ninja-build clang-format
       - run: cmake --preset ci-linux-clang
       - run: cmake --build --preset ci-linux-clang
       - run: ctest --preset ci-linux-clang
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y
-          clang-18 ninja-build clang-format
+          clang-18 libstdc++-14-dev ninja-build clang-format
       - run: cmake --preset ci-linux-clang-asan
       - run: cmake --build --preset ci-linux-clang-asan
       - run: ctest --preset ci-linux-clang-asan
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y
-          clang-tidy-18 clang-18 ninja-build
+          clang-tidy-18 clang-18 libstdc++-14-dev ninja-build
       - run: cmake --preset ci-linux-clang
       - run: >
           clang-tidy-18 app/main.cpp regress/unit/main.cpp
