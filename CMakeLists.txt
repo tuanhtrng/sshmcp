@@ -21,6 +21,7 @@ enable_testing()
 
 add_executable(sshmcp_unit
     regress/unit/main.cpp
-    regress/unit/test_harness.cpp)
+    regress/unit/test_harness.cpp
+    regress/unit/test_ssh.cpp)
 target_link_libraries(sshmcp_unit PRIVATE sshmcp)
 add_test(NAME unit COMMAND sshmcp_unit)

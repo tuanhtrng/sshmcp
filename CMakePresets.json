@@ -3,7 +3,8 @@
   "cmakeMinimumRequired": {"major": 3, "minor": 28, "patch": 0},
   "configurePresets": [
     {"name": "base", "hidden": true, "generator": "Ninja",
-     "binaryDir": "${sourceDir}/build/${presetName}"},
+     "binaryDir": "${sourceDir}/build/${presetName}",
+     "cacheVariables": {"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"}},
     {"name": "windows", "hidden": true, "inherits": "base",
      "cacheVariables": {"SSHMCP_PLATFORM": "windows"}},
     {"name": "linux", "hidden": true, "inherits": "base",
