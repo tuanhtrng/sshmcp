@@ -191,10 +191,12 @@ Each defines
 - **TDD.** Red-green per unit; e2e transcripts as the acceptance
   layer.
 - **Versioning:** semver, rolling release — every commit on `main`
-  releasable. Single source of truth:
-  `inline constexpr std::string_view VERSION` in
-  `include/sshmcp/version.hpp`, reported via MCP `initialize`.
-  Release = bump + tag `vX.Y.Z`. Starts at `0.1.0`.
+  releasable. Single source of truth: `project(sshmcp VERSION
+  X.Y.Z)` in `CMakeLists.txt`. `configure_file` generates
+  `<build>/generated/sshmcp/version.hpp` containing
+  `inline constexpr std::string_view VERSION` (constexpr, not a
+  macro), reported via MCP `initialize`. CI auto-tags `vX.Y.Z` on
+  `main` when the CMakeLists version changes. Starts at `0.1.0`.
 - **Conventional commits** (`feat:` / `fix:` / `chore:` / …).
 - **License:** MIT.
 
