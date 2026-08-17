@@ -16,6 +16,7 @@ inline constexpr auto MAX_READ_BYTES = std::size_t{1'048'576};
 inline constexpr auto MAX_BINARY_BYTES = std::size_t{8'388'608};
 inline constexpr auto MAX_SESSIONS = std::size_t{4};
 inline constexpr auto MAX_FORWARDS = std::size_t{8};
+inline constexpr auto MAX_TRANSFER_BYTES = std::size_t{268'435'456};
 inline constexpr auto DEFAULT_SESSION_IDLE_MS = std::int64_t{1'800'000};
 
 enum class log_level_t { OFF, INFO, DEBUG };

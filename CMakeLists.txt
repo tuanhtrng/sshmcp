@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(sshmcp VERSION 0.11.2 LANGUAGES CXX)
+project(sshmcp VERSION 0.12.1 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -71,6 +71,10 @@ add_test(NAME e2e_forward_fail COMMAND Python3::Interpreter
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
     $<TARGET_FILE:sshmcp_app>
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/forward_fail)
+add_test(NAME e2e_transfer COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/transfer)
 
 add_test(NAME lint_header_only COMMAND Python3::Interpreter
     ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/header_only.py

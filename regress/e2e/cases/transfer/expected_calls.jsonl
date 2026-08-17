@@ -1,0 +1,2 @@
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "mkdir -p '/srv' && cat > '/srv/app.bin'"], "stdin": "transfer payload 123\n"}
+{"argv": ["-T", "-o", "BatchMode=yes", "dev@example", "cat '/var/log/app.log'"], "stdin": ""}

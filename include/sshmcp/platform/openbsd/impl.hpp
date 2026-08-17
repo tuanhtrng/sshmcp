@@ -28,7 +28,7 @@ class platform_impl_t : public subprocess_base_t<platform_impl_t> {
     }
 
     auto harden_impl() -> void {
-        if (pledge("stdio rpath proc exec", nullptr) != 0) {
+        if (pledge("stdio rpath wpath cpath proc exec", nullptr) != 0) {
             std::println(stderr, "sshmcp: pledge unavailable, continuing");
         }
     }
