@@ -1,0 +1,3 @@
+{"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {}}
+{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "upload_file", "arguments": {"local_path": "{TMP}/push.bin", "remote_path": "/srv/app.bin"}}}
+{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "download_file", "arguments": {"remote_path": "/var/log/app.log", "local_path": "{TMP}/pull.log"}}}

@@ -1,0 +1,3 @@
+{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {"tools": {}}, "protocolVersion": "2024-11-05", "serverInfo": {"name": "sshmcp", "version": "VERSION"}}}
+{"id": 1, "jsonrpc": "2.0", "result": {"content": [{"text": "uploaded 21 bytes to /srv/app.bin", "type": "text"}], "isError": false}}
+{"id": 2, "jsonrpc": "2.0", "result": {"content": [{"text": "downloaded 26 bytes to {TMP}/pull.log", "type": "text"}], "isError": false}}

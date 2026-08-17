@@ -4,9 +4,11 @@ An MCP (Model Context Protocol) stdio server that lets an AI agent
 develop on a remote VPS over SSH. C++23, header-only, zero runtime
 dependencies beyond your OpenSSH client.
 
-Six tools: `exec` (one-shot or persistent session), `read_file`,
-`write_file` (text or base64 binary), `session_close`,
-`forward_open`, `forward_close`.
+Eight tools: `exec` (one-shot or persistent session),
+`read_file`, `write_file` (text or base64 binary),
+`upload_file`, `download_file` (local disk <-> remote, streamed,
+up to 256 MiB), `session_close`, `forward_open`,
+`forward_close`.
 Every operation shells out to `ssh`, so authentication, host keys,
 aliases, agents and `ProxyJump` all come from your existing
 `~/.ssh/config` — sshmcp adds no auth machinery of its own.
@@ -65,7 +67,11 @@ Limitations: session commands must not read stdin (use
 
 `read_file`/`write_file` accept `encoding: "base64"` for binary
 content up to 8 MiB. No encoder is needed on the remote host —
-ssh pipes are 8-bit clean and the codec runs locally.
+ssh pipes are 8-bit clean and the codec runs locally. For bigger
+payloads, `upload_file`/`download_file` stream between the LOCAL
+disk (sshmcp runs on your machine) and the remote path — bytes
+never enter the JSON protocol, cap 256 MiB. `download_file`
+overwrites its local target and creates parent directories.
 
 ## Port forwarding
 
