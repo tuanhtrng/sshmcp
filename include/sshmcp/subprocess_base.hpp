@@ -20,6 +20,10 @@ class subprocess_base_t {
         static_cast<Derived*>(this)->init_stdio_impl();
     }
 
+    auto harden() -> void {
+        static_cast<Derived*>(this)->harden_impl();
+    }
+
     auto run(spawn_request_t const& request)
         -> std::expected<spawn_result_t, error_t> {
         if (log_level == log_level_t::DEBUG) {

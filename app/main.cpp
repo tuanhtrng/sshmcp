@@ -28,6 +28,7 @@ auto main(int argc, char** argv) -> int {
     }
     auto impl = sshmcp::platform_impl_t{config->log_level};
     impl.init_stdio();
+    impl.harden();
     auto manager =
         sshmcp::session_manager_t<sshmcp::platform_impl_t>{impl, *config};
     auto forwards =

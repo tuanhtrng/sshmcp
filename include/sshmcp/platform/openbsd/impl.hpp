@@ -9,8 +9,10 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cstdio>
 #include <expected>
 #include <memory>
+#include <print>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +25,12 @@ class platform_impl_t : public subprocess_base_t<platform_impl_t> {
 
     auto init_stdio_impl() -> void {
         signal(SIGPIPE, SIG_IGN);
+    }
+
+    auto harden_impl() -> void {
+        if (pledge("stdio rpath proc exec", nullptr) != 0) {
+            std::println(stderr, "sshmcp: pledge unavailable, continuing");
+        }
     }
 
     auto spawn_impl(spawn_request_t const& request)
