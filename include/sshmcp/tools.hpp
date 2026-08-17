@@ -107,6 +107,10 @@ struct exec_tool_t {
         if (!allowed) {
             return error_result("exec: " + allowed.error().message);
         }
+        auto const denied = check_denied(command, context.config.deny);
+        if (!denied) {
+            return error_result("exec: " + denied.error().message);
+        }
         auto cwd = std::optional<std::string>{};
         if (arguments.contains("cwd") && arguments["cwd"].is_string()) {
             cwd = arguments["cwd"].get<std::string>();

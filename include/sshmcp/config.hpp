@@ -53,6 +53,10 @@ inline auto load_config(get_env_fn_t const& get_env,
     if (allow != nullptr) {
         config.allow = parse_allow(allow);
     }
+    auto const* deny = get_env("SSHMCP_DENY");
+    if (deny != nullptr) {
+        config.deny = parse_deny(deny);
+    }
     auto const* log_level = get_env("SSHMCP_LOG");
     if (log_level != nullptr) {
         config.log_level = parse_log_level(log_level);

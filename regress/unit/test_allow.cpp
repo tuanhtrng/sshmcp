@@ -45,4 +45,57 @@ namespace t = sshmcp::test;
     }
 });
 
+[[maybe_unused]] auto const t5 = t::add_test("parse_deny", [] {
+    auto const parsed = sshmcp::parse_deny("cvs commit, rm  -rf ,,");
+    auto const want =
+        std::vector<std::vector<std::string>>{{"cvs", "commit"}, {"rm", "-rf"}};
+    t::expect(parsed == want, "comma split then word split");
+    t::expect(sshmcp::parse_deny("").empty(), "empty");
+});
+
+[[maybe_unused]] auto const t6 = t::add_test("deny empty", [] {
+    auto const none = std::vector<std::vector<std::string>>{};
+    t::expect(sshmcp::check_denied("cvs commit -m x", none).has_value(),
+              "empty list passes everything");
+});
+
+[[maybe_unused]] auto const t7 = t::add_test("deny match", [] {
+    auto const deny = std::vector<std::vector<std::string>>{{"cvs", "commit"}};
+    auto const blocked = sshmcp::check_denied("cvs commit -m x", deny);
+    t::expect(!blocked.has_value(), "head plus subcommand blocked");
+    t::expect(blocked.error().message.contains("'cvs commit'"),
+              "names blocked entry");
+    t::expect(!sshmcp::check_denied("cvs -q commit", deny).has_value(),
+              "subcommand after flags still blocked");
+    t::expect(!sshmcp::check_denied("  \tcvs commit", deny).has_value(),
+              "leading whitespace tokenizes");
+    t::expect(sshmcp::check_denied("cvs diff", deny).has_value(),
+              "other subcommand passes");
+    t::expect(sshmcp::check_denied("git commit -m x", deny).has_value(),
+              "other head passes");
+    t::expect(sshmcp::check_denied("echo cvs commit", deny).has_value(),
+              "entry head must be command head");
+});
+
+[[maybe_unused]] auto const t8 = t::add_test("deny head only", [] {
+    auto const deny = std::vector<std::vector<std::string>>{{"shutdown"}};
+    t::expect(!sshmcp::check_denied("shutdown -h now", deny).has_value(),
+              "single token entry blocks head");
+    t::expect(sshmcp::check_denied("ls shutdown", deny).has_value(),
+              "argument mention passes");
+});
+
+[[maybe_unused]] auto const t9 = t::add_test("deny syntax", [] {
+    auto const deny = std::vector<std::vector<std::string>>{{"cvs", "commit"}};
+    for (auto const command :
+         {"ls; cvs commit", "ls && cvs commit", "true || cvs commit",
+          "echo x | cvs commit", "cvs commit & ", "echo `cvs commit`",
+          "echo $(cvs commit)", "ls\ncvs commit"}) {
+        auto const blocked = sshmcp::check_denied(command, deny);
+        t::expect(!blocked.has_value(), "compound rejected while deny active");
+        t::expect(blocked.error().message.contains("compound"),
+                  "syntax message");
+    }
+});
+
 } // namespace
