@@ -7,6 +7,9 @@
 
 #include <cstdint>
 #include <expected>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -309,6 +312,71 @@ auto context_with(sshmcp::spawn_result_t reply,
                   bare, {{"local_port", 1}, {"remote_port", 2}})
                   .is_error,
               "no backend errors");
+});
+
+auto temp_dir() -> std::filesystem::path {
+    auto const base =
+        std::filesystem::temp_directory_path() / "sshmcp_transfer_test";
+    std::filesystem::create_directories(base);
+    return base;
+}
+
+[[maybe_unused]] auto const t13 = t::add_test("upload_file", [] {
+    auto const dir = temp_dir();
+    auto const src = dir / "in.bin";
+    auto const raw = std::string{"\x01\x00\xffup", 5};
+    {
+        auto out = std::ofstream{src, std::ios::binary};
+        out.write(raw.data(), static_cast<std::streamsize>(raw.size()));
+    }
+    auto captured = sshmcp::spawn_request_t{};
+    auto context = context_with({.exit_code = 0}, captured);
+    auto const result = sshmcp::upload_file_tool_t::invoke(
+        context,
+        {{"local_path", src.string()}, {"remote_path", "/srv/a b/out.bin"}});
+    t::expect(!result.is_error, "ok");
+    t::expect(captured.stdin_data == raw, "bytes piped");
+    t::expect(captured.argv.back() ==
+                  "mkdir -p '/srv/a b' && cat > '/srv/a b/out.bin'",
+              "remote command");
+    t::expect(result.text.contains("5 bytes"), "size reported");
+
+    auto const missing = sshmcp::upload_file_tool_t::invoke(
+        context,
+        {{"local_path", (dir / "nope.bin").string()}, {"remote_path", "/x"}});
+    t::expect(missing.is_error, "missing local errors");
+
+    auto failing =
+        context_with({.stderr_text = "disk full", .exit_code = 1}, captured);
+    auto const remote_fail = sshmcp::upload_file_tool_t::invoke(
+        failing, {{"local_path", src.string()}, {"remote_path", "/x"}});
+    t::expect(remote_fail.is_error, "remote failure errors");
+    t::expect(remote_fail.text.contains("disk full"), "stderr surfaced");
+});
+
+[[maybe_unused]] auto const t14 = t::add_test("download_file", [] {
+    auto const dir = temp_dir();
+    auto const dst = dir / "sub" / "got.bin";
+    std::filesystem::remove(dst);
+    auto const raw = std::string{"\x00down\xff", 6};
+    auto captured = sshmcp::spawn_request_t{};
+    auto context = context_with({.stdout_text = raw, .exit_code = 0}, captured);
+    auto const result = sshmcp::download_file_tool_t::invoke(
+        context,
+        {{"remote_path", "/var/log/x y.log"}, {"local_path", dst.string()}});
+    t::expect(!result.is_error, "ok");
+    t::expect(captured.argv.back() == "cat '/var/log/x y.log'",
+              "remote command");
+    auto in = std::ifstream{dst, std::ios::binary};
+    auto const got = std::string{std::istreambuf_iterator<char>{in},
+                                 std::istreambuf_iterator<char>{}};
+    t::expect(got == raw, "bytes on disk (parent created)");
+
+    auto failing = context_with(
+        {.stderr_text = "cat: no such file", .exit_code = 1}, captured);
+    auto const remote_fail = sshmcp::download_file_tool_t::invoke(
+        failing, {{"remote_path", "/nope"}, {"local_path", dst.string()}});
+    t::expect(remote_fail.is_error, "remote failure errors");
 });
 
 } // namespace

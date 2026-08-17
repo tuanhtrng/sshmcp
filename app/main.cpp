@@ -36,7 +36,8 @@ auto main(int argc, char** argv) -> int {
     auto server = sshmcp::server_t<
         sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
         sshmcp::write_file_tool_t, sshmcp::session_close_tool_t,
-        sshmcp::forward_open_tool_t, sshmcp::forward_close_tool_t>{
+        sshmcp::forward_open_tool_t, sshmcp::forward_close_tool_t,
+        sshmcp::upload_file_tool_t, sshmcp::download_file_tool_t>{
         sshmcp::context_t{
             .config = *config,
             .spawn =

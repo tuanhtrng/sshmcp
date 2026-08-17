@@ -10,7 +10,10 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -383,6 +386,141 @@ struct forward_close_tool_t {
             return error_result(std::format("no such forward: {}", local_port));
         }
         return {.text = std::format("closed forward {}", local_port),
+                .is_error = false};
+    }
+};
+
+struct upload_file_tool_t {
+    static constexpr auto NAME = std::string_view{"upload_file"};
+    static constexpr auto DESCRIPTION = std::string_view{
+        "Stream a file from the LOCAL machine to a path on the "
+        "remote host (max 256 MiB), creating remote parent "
+        "directories."};
+
+    static auto schema() -> nlohmann::json {
+        return {
+            {"type", "object"},
+            {"properties",
+             {{"local_path",
+               {{"type", "string"}, {"description", "file on this machine"}}},
+              {"remote_path",
+               {{"type", "string"},
+                {"description", "destination on the VPS"}}}}},
+            {"required", nlohmann::json::array({"local_path", "remote_path"})}};
+    }
+
+    static auto invoke(context_t& context, nlohmann::json const& arguments)
+        -> tool_result_t {
+        if (!arguments.contains("local_path") ||
+            !arguments["local_path"].is_string() ||
+            !arguments.contains("remote_path") ||
+            !arguments["remote_path"].is_string()) {
+            return error_result("upload_file: 'local_path' and 'remote_path' "
+                                "(strings) are required");
+        }
+        auto const local_path = arguments["local_path"].get<std::string>();
+        auto const remote_path = arguments["remote_path"].get<std::string>();
+        auto stream =
+            std::ifstream{std::filesystem::path{local_path}, std::ios::binary};
+        if (!stream) {
+            return error_result("upload_file: cannot read " + local_path);
+        }
+        auto content = std::string{std::istreambuf_iterator<char>{stream},
+                                   std::istreambuf_iterator<char>{}};
+        if (!stream.good() && !stream.eof()) {
+            return error_result("upload_file: read failed for " + local_path);
+        }
+        if (content.size() > MAX_TRANSFER_BYTES) {
+            return error_result("upload_file: file exceeds 256 MiB");
+        }
+        auto const size = content.size();
+        auto const spawned = context.spawn(spawn_request_t{
+            .argv = build_ssh_argv(context.config, write_command(remote_path)),
+            .stdin_data = std::move(content),
+            .timeout_ms = MAX_TIMEOUT_MS});
+        if (!spawned) {
+            return error_result("upload_file: " + spawned.error().message);
+        }
+        if (spawned->is_timed_out) {
+            return error_result("upload_file: timed out");
+        }
+        if (spawned->exit_code != 0) {
+            return error_result(
+                "upload_file failed: " +
+                truncate_middle(spawned->stderr_text, 1000).text);
+        }
+        return {.text =
+                    std::format("uploaded {} bytes to {}", size, remote_path),
+                .is_error = false};
+    }
+};
+
+struct download_file_tool_t {
+    static constexpr auto NAME = std::string_view{"download_file"};
+    static constexpr auto DESCRIPTION =
+        std::string_view{"Stream a file from the remote host to a path on the "
+                         "LOCAL machine (max 256 MiB), creating local parent "
+                         "directories; overwrites an existing local file."};
+
+    static auto schema() -> nlohmann::json {
+        return {
+            {"type", "object"},
+            {"properties",
+             {{"remote_path",
+               {{"type", "string"}, {"description", "file on the VPS"}}},
+              {"local_path",
+               {{"type", "string"},
+                {"description", "destination on this machine"}}}}},
+            {"required", nlohmann::json::array({"remote_path", "local_path"})}};
+    }
+
+    static auto invoke(context_t& context, nlohmann::json const& arguments)
+        -> tool_result_t {
+        if (!arguments.contains("remote_path") ||
+            !arguments["remote_path"].is_string() ||
+            !arguments.contains("local_path") ||
+            !arguments["local_path"].is_string()) {
+            return error_result("download_file: 'remote_path' and 'local_path' "
+                                "(strings) are required");
+        }
+        auto const remote_path = arguments["remote_path"].get<std::string>();
+        auto const local_path = arguments["local_path"].get<std::string>();
+        auto const spawned = context.spawn(spawn_request_t{
+            .argv = build_ssh_argv(context.config, read_command(remote_path)),
+            .stdin_data = {},
+            .timeout_ms = MAX_TIMEOUT_MS});
+        if (!spawned) {
+            return error_result("download_file: " + spawned.error().message);
+        }
+        if (spawned->is_timed_out) {
+            return error_result("download_file: timed out");
+        }
+        if (spawned->exit_code != 0) {
+            return error_result(
+                "download_file failed: " +
+                truncate_middle(spawned->stderr_text, 1000).text);
+        }
+        if (spawned->stdout_text.size() > MAX_TRANSFER_BYTES) {
+            return error_result("download_file: file exceeds 256 MiB");
+        }
+        auto const target = std::filesystem::path{local_path};
+        auto error = std::error_code{};
+        if (target.has_parent_path()) {
+            std::filesystem::create_directories(target.parent_path(), error);
+        }
+        auto stream = std::ofstream{target, std::ios::binary};
+        if (!stream) {
+            return error_result("download_file: cannot write " + local_path);
+        }
+        stream.write(spawned->stdout_text.data(),
+                     static_cast<std::streamsize>(spawned->stdout_text.size()));
+        stream.close();
+        if (!stream) {
+            return error_result("download_file: write failed for " +
+                                local_path);
+        }
+        return {.text = std::format("downloaded {} bytes to {}",
+                                    spawned->stdout_text.size(), local_path),
                 .is_error = false};
     }
 };
