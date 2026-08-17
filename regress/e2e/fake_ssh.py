@@ -89,7 +89,23 @@ def oneshot_mode() -> int:
     return int(reply.get("exit", 0))
 
 
+def forward_mode() -> int:
+    log_path = os.environ["FAKE_SSH_LOG"]
+    with open(log_path, "a", encoding="utf-8") as log:
+        log.write(json.dumps(
+            {"argv": sys.argv[1:], "stdin": ""}) + "\n")
+    fail = os.environ.get("FAKE_SSH_FORWARD_FAIL")
+    if fail:
+        sys.stderr.buffer.write(fail.encode("utf-8"))
+        sys.stderr.buffer.flush()
+        return 1
+    time.sleep(3600)  # killed by the server
+    return 0
+
+
 def main() -> int:
+    if "-N" in sys.argv[1:]:
+        return forward_mode()
     if sys.argv[1:] and sys.argv[-1] == "sh":
         return session_mode()
     return oneshot_mode()

@@ -120,6 +120,8 @@ class platform_impl_t : public subprocess_base_t<platform_impl_t> {
         _setmode(_fileno(stdout), _O_BINARY);
     }
 
+    auto harden_impl() -> void {}
+
     auto spawn_impl(spawn_request_t const& request)
         -> std::expected<spawn_result_t, error_t> {
         auto security = SECURITY_ATTRIBUTES{};

@@ -1,0 +1,2 @@
+{"id": 0, "jsonrpc": "2.0", "result": {"capabilities": {"tools": {}}, "protocolVersion": "2024-11-05", "serverInfo": {"name": "sshmcp", "version": "VERSION"}}}
+{"id": 1, "jsonrpc": "2.0", "result": {"content": [{"text": "forward_open: forward failed: bind [127.0.0.1]:18081: Address already in use", "type": "text"}], "isError": true}}

@@ -1,0 +1,1 @@
+{"argv": ["-N", "-o", "BatchMode=yes", "-L", "127.0.0.1:18081:localhost:3000", "dev@example"], "stdin": ""}

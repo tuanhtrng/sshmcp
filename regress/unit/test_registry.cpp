@@ -16,15 +16,21 @@ static_assert(sshmcp::tool<sshmcp::read_file_tool_t>);
 static_assert(sshmcp::tool<sshmcp::write_file_tool_t>);
 
 static_assert(sshmcp::tool<sshmcp::session_close_tool_t>);
+static_assert(sshmcp::tool<sshmcp::forward_open_tool_t>);
+static_assert(sshmcp::tool<sshmcp::forward_close_tool_t>);
 
 using tools_t =
     sshmcp::tool_set_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
-                       sshmcp::write_file_tool_t, sshmcp::session_close_tool_t>;
+                       sshmcp::write_file_tool_t, sshmcp::session_close_tool_t,
+                       sshmcp::forward_open_tool_t,
+                       sshmcp::forward_close_tool_t>;
 
 [[maybe_unused]] auto const t1 = t::add_test("list", [] {
     auto const tools = tools_t::list();
-    t::expect(tools.size() == 4, "four tools");
-    t::expect(tools[3]["name"] == "session_close", "close last");
+    t::expect(tools.size() == 6, "six tools");
+    t::expect(tools[3]["name"] == "session_close", "close 4th");
+    t::expect(tools[4]["name"] == "forward_open", "fwd open 5th");
+    t::expect(tools[5]["name"] == "forward_close", "fwd close 6th");
     t::expect(tools[0]["name"] == "exec", "exec first");
     t::expect(tools[1]["name"] == "read_file", "read");
     t::expect(tools[2]["name"] == "write_file", "write");

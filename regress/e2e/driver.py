@@ -44,6 +44,10 @@ def main() -> int:
             "FAKE_SSH_LOG": str(log_path),
             "FAKE_SSH_REPLIES": str(replies_path),
         })
+        extra_env = case_dir / "env.json"
+        if extra_env.exists():
+            env.update(json.loads(
+                extra_env.read_text(encoding="utf-8")))
         transcript = (case_dir / "transcript.jsonl") \
             .read_text(encoding="utf-8")
         proc = subprocess.run(

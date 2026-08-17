@@ -1,4 +1,5 @@
 #include <sshmcp/config.hpp>
+#include <sshmcp/forward.hpp>
 #include <sshmcp/mcp.hpp>
 #include <sshmcp/session.hpp>
 #include <sshmcp/subprocess.hpp>
@@ -27,12 +28,16 @@ auto main(int argc, char** argv) -> int {
     }
     auto impl = sshmcp::platform_impl_t{config->log_level};
     impl.init_stdio();
+    impl.harden();
     auto manager =
         sshmcp::session_manager_t<sshmcp::platform_impl_t>{impl, *config};
-    auto server =
-        sshmcp::server_t<sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
-                         sshmcp::write_file_tool_t,
-                         sshmcp::session_close_tool_t>{sshmcp::context_t{
+    auto forwards =
+        sshmcp::forward_manager_t<sshmcp::platform_impl_t>{impl, *config};
+    auto server = sshmcp::server_t<
+        sshmcp::exec_tool_t, sshmcp::read_file_tool_t,
+        sshmcp::write_file_tool_t, sshmcp::session_close_tool_t,
+        sshmcp::forward_open_tool_t, sshmcp::forward_close_tool_t>{
+        sshmcp::context_t{
             .config = *config,
             .spawn =
                 [&impl](sshmcp::spawn_request_t const& request) {
@@ -46,6 +51,15 @@ auto main(int argc, char** argv) -> int {
             .session_close =
                 [&manager](std::string_view name) {
                     return manager.close(name);
+                },
+            .forward_open =
+                [&forwards](int local_port, std::string_view remote_host,
+                            int remote_port) {
+                    return forwards.open(local_port, remote_host, remote_port);
+                },
+            .forward_close =
+                [&forwards](int local_port) {
+                    return forwards.close(local_port);
                 }}};
     return server.run(std::cin, std::cout);
 }

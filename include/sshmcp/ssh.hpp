@@ -2,6 +2,7 @@
 
 #include <sshmcp/types.hpp>
 
+#include <format>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -59,6 +60,21 @@ inline auto build_ssh_argv(config_t const& config, std::string remote_command)
     argv.insert(argv.end(), config.ssh_args.begin(), config.ssh_args.end());
     argv.push_back(config.target);
     argv.push_back(std::move(remote_command));
+    return argv;
+}
+
+inline auto build_forward_argv(config_t const& config, int local_port,
+                               std::string_view remote_host, int remote_port)
+    -> std::vector<std::string> {
+    auto argv = config.ssh_exe;
+    argv.push_back("-N");
+    argv.push_back("-o");
+    argv.push_back("BatchMode=yes");
+    argv.insert(argv.end(), config.ssh_args.begin(), config.ssh_args.end());
+    argv.push_back("-L");
+    argv.push_back(std::format("127.0.0.1:{}:{}:{}", local_port, remote_host,
+                               remote_port));
+    argv.push_back(config.target);
     return argv;
 }
 

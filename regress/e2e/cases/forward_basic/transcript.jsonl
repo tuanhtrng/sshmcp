@@ -1,0 +1,4 @@
+{"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"forward_open","arguments":{"local_port":18080,"remote_port":3000}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"forward_close","arguments":{"local_port":18080}}}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"forward_close","arguments":{"local_port":18080}}}

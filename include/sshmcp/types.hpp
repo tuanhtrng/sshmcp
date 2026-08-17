@@ -15,6 +15,7 @@ inline constexpr auto MAX_OUTPUT_CHARS = std::size_t{50'000};
 inline constexpr auto MAX_READ_BYTES = std::size_t{1'048'576};
 inline constexpr auto MAX_BINARY_BYTES = std::size_t{8'388'608};
 inline constexpr auto MAX_SESSIONS = std::size_t{4};
+inline constexpr auto MAX_FORWARDS = std::size_t{8};
 inline constexpr auto DEFAULT_SESSION_IDLE_MS = std::int64_t{1'800'000};
 
 enum class log_level_t { OFF, INFO, DEBUG };
@@ -57,18 +58,24 @@ struct config_t {
     std::vector<std::string> ssh_args;
     log_level_t log_level{log_level_t::INFO};
     std::int64_t session_idle_ms{DEFAULT_SESSION_IDLE_MS};
+    std::vector<std::string> allow;
 };
 
 using session_exec_fn_t =
     std::function<std::expected<session_result_t, error_t>(
         std::string_view, std::string_view, std::int64_t)>;
 using session_close_fn_t = std::function<bool(std::string_view)>;
+using forward_open_fn_t = std::function<std::expected<std::string, error_t>(
+    int, std::string_view, int)>;
+using forward_close_fn_t = std::function<bool(int)>;
 
 struct context_t {
     config_t config;
     spawn_fn_t spawn;
     session_exec_fn_t session_exec;
     session_close_fn_t session_close;
+    forward_open_fn_t forward_open;
+    forward_close_fn_t forward_close;
 };
 
 struct tool_result_t {

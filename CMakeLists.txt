@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(sshmcp VERSION 0.7.3 LANGUAGES CXX)
+project(sshmcp VERSION 0.11.2 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -35,6 +35,8 @@ add_executable(sshmcp_unit
     regress/unit/test_base64.cpp
     regress/unit/test_session_protocol.cpp
     regress/unit/test_session_manager.cpp
+    regress/unit/test_allow.cpp
+    regress/unit/test_forward.cpp
     regress/unit/platform/${SSHMCP_PLATFORM}/test_impl.cpp)
 target_include_directories(sshmcp_unit PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/unit)
@@ -61,6 +63,14 @@ add_test(NAME e2e_session_timeout COMMAND Python3::Interpreter
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
     $<TARGET_FILE:sshmcp_app>
     ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/session_timeout)
+add_test(NAME e2e_forward_basic COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/forward_basic)
+add_test(NAME e2e_forward_fail COMMAND Python3::Interpreter
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/driver.py
+    $<TARGET_FILE:sshmcp_app>
+    ${CMAKE_CURRENT_SOURCE_DIR}/regress/e2e/cases/forward_fail)
 
 add_test(NAME lint_header_only COMMAND Python3::Interpreter
     ${CMAKE_CURRENT_SOURCE_DIR}/share/linter/header_only.py
