@@ -84,26 +84,6 @@ forwards; they stay up until `forward_close` or server exit. A
 forward that fails to establish (port in use, refused) returns
 ssh's stderr as the tool error.
 
-## Allowlist
-
-Set `SSHMCP_ALLOW=git,make,ls,cat` to restrict `exec` to listed
-first tokens; compound syntax (`;`, `&&`, `|`, `$(...)`, backtick,
-`&`, newlines) is rejected outright while the list is active.
-Unset means unrestricted.
-
-`SSHMCP_DENY` is the inverse: comma-separated phrases that block a
-command while everything else stays allowed. A one-word entry
-blocks that command head outright; a multi-word entry like
-`SSHMCP_DENY=cvs commit` blocks only when the head matches and
-every remaining word appears among the arguments (so `cvs -q
-commit` is blocked, `cvs diff` is not). Compound syntax is
-rejected while the deny list is active, same as the allowlist.
-Both lists can be set together; deny is checked after allow.
-
-These are guardrails against accidental destructive commands, not
-a security boundary — the connected AI is a trusted operator
-either way.
-
 On OpenBSD hosts running sshmcp itself, the process drops
 privileges with `pledge("stdio rpath proc exec")` at startup.
 
@@ -116,8 +96,6 @@ privileges with `pledge("stdio rpath proc exec")` at startup.
 | `SSHMCP_SSH_ARGS` | extra args passed to ssh | empty |
 | `SSHMCP_LOG` | `off` / `info` / `debug` (stderr) | `info` |
 | `SSHMCP_SESSION_IDLE_MS` | idle reap for sessions | `1800000` |
-| `SSHMCP_ALLOW` | comma list of allowed exec commands | unset (all) |
-| `SSHMCP_DENY` | comma list of blocked command phrases | unset (none) |
 
 ## Security notes
 
@@ -129,8 +107,9 @@ privileges with `pledge("stdio rpath proc exec")` at startup.
   Full command lines appear only at `debug`, because commands
   routinely contain secrets.
 - The AI client is authorized to run arbitrary commands on the
-  target — that is the product. `SSHMCP_ALLOW`/`SSHMCP_DENY`
-  reduce accidents but are not a security boundary.
+  target — that is the product. Restrict what the account can do
+  on the server side (dedicated user, forced command, sshd
+  options) if you need a real boundary.
 
 ## Development
 

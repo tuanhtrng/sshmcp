@@ -59,8 +59,6 @@ struct config_t {
     std::vector<std::string> ssh_args;
     log_level_t log_level{log_level_t::INFO};
     std::int64_t session_idle_ms{DEFAULT_SESSION_IDLE_MS};
-    std::vector<std::string> allow;
-    std::vector<std::vector<std::string>> deny;
 };
 
 using session_exec_fn_t =

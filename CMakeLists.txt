@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(sshmcp VERSION 0.13.0 LANGUAGES CXX)
+project(sshmcp VERSION 0.13.1 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -35,7 +35,6 @@ add_executable(sshmcp_unit
     regress/unit/test_base64.cpp
     regress/unit/test_session_protocol.cpp
     regress/unit/test_session_manager.cpp
-    regress/unit/test_allow.cpp
     regress/unit/test_forward.cpp
     regress/unit/platform/${SSHMCP_PLATFORM}/test_impl.cpp)
 target_include_directories(sshmcp_unit PRIVATE

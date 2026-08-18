@@ -1,6 +1,5 @@
 #pragma once
 
-#include <sshmcp/allow.hpp>
 #include <sshmcp/ssh.hpp>
 #include <sshmcp/types.hpp>
 
@@ -48,14 +47,6 @@ inline auto load_config(get_env_fn_t const& get_env,
     auto const* ssh_args = get_env("SSHMCP_SSH_ARGS");
     if (ssh_args != nullptr) {
         config.ssh_args = split_command(ssh_args);
-    }
-    auto const* allow = get_env("SSHMCP_ALLOW");
-    if (allow != nullptr) {
-        config.allow = parse_allow(allow);
-    }
-    auto const* deny = get_env("SSHMCP_DENY");
-    if (deny != nullptr) {
-        config.deny = parse_deny(deny);
     }
     auto const* log_level = get_env("SSHMCP_LOG");
     if (log_level != nullptr) {

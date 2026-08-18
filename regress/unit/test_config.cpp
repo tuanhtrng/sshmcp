@@ -64,25 +64,4 @@ auto env_of(std::map<std::string, std::string> values) -> sshmcp::get_env_fn_t {
     t::expect(fallback->log_level == sshmcp::log_level_t::INFO, "default info");
 });
 
-[[maybe_unused]] auto const t4 = t::add_test("allow env", [] {
-    auto const args = std::vector<std::string>{"a@b"};
-    auto const config =
-        sshmcp::load_config(env_of({{"SSHMCP_ALLOW", "git, make ,ls"}}), args);
-    auto const want = std::vector<std::string>{"git", "make", "ls"};
-    t::expect(config->allow == want, "allow parsed");
-    auto const off = sshmcp::load_config(env_of({}), args);
-    t::expect(off->allow.empty(), "default empty");
-});
-
-[[maybe_unused]] auto const t5 = t::add_test("deny env", [] {
-    auto const args = std::vector<std::string>{"a@b"};
-    auto const config = sshmcp::load_config(
-        env_of({{"SSHMCP_DENY", "cvs commit, rm -rf"}}), args);
-    auto const want =
-        std::vector<std::vector<std::string>>{{"cvs", "commit"}, {"rm", "-rf"}};
-    t::expect(config->deny == want, "deny parsed");
-    auto const off = sshmcp::load_config(env_of({}), args);
-    t::expect(off->deny.empty(), "default empty");
-});
-
 } // namespace
